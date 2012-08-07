@@ -1,8 +1,15 @@
 #!/bin/bash
 
+# print usage information
+if [ $1 ] && [ ! $2 ]
+then
+	echo "Usage: git-cleanup [-b remote]"
+	exit 0
+fi
+
 # determine if we want to backup
 BACKUP=0
-if [ $# -gt 1 ] && [ $1 = "-b" ]
+if [ $1 ] && [ $2 ]
 then
 	BACKUP=1
 	BACKUP_REMOTE=$2
@@ -32,7 +39,7 @@ done
 # optionally push
 if [ $BACKUP -eq 1 ]
 then
-	echo "Backing up..."
+	echo "Backing up to ${BACKUP_REMOTE}..."
 	for i in $MERGED_BRANCHES; do
 		git push $BACKUP_REMOTE $i
 	done
