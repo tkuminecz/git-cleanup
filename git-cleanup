@@ -1,1 +1,46 @@
 #!/bin/bash
+
+# determine if we want to backup
+BACKUP=0
+if [ $# -gt 1 ] && [ $1 = "-b" ]
+then
+	BACKUP=1
+	BACKUP_REMOTE=$2
+fi
+
+# determine merged branches
+MERGED_BRANCHES=""
+BRANCHES=`git branch | cut -c 2-`
+for i in $BRANCHES; do
+	if [[ "$i" =~ '[A-Za-z]+-[0-9]+' ]]
+	then
+		COMMITS_AHEAD=`git branch -vv | grep ' '$i | cut --delimiter=[ -f 2 | cut --delimiter=] -f 1 | grep ahead`
+
+		if [ ! -n "$COMMITS_AHEAD" ]
+		then
+			# possibly push to remote
+			if [ $BACKUP -eq 1 ]
+			then
+				echo "pushing ${i}..."
+				git push $BACKUP_REMOTE $i
+			fi
+			MERGED_BRANCHES=$MERGED_BRANCHES" "$i
+		fi
+	fi
+done
+
+# optionally push
+if [ $BACKUP -eq 1 ]
+then
+	echo "Backing up..."
+	for i in $MERGED_BRANCHES; do
+		git push $BACKUP_REMOTE $i
+	done
+fi
+
+# delete branches
+git checkout master
+echo "Deleting merged branches..."
+for i in $MERGED_BRANCHES; do
+	git branch -d $i
+done
